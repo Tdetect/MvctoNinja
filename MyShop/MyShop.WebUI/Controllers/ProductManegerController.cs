@@ -4,30 +4,36 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using MyShop.Core.Models;
+using MyShop.Core.ViewsModels;
 using MyShop.DataAccess.InMemory;
+
 
 namespace MyShop.WebUI.Controllers
 {
-    public class ProductManegerController : Controller
+    public class ProductManagerController : Controller
     {
+        ProductRepo context;
+        ProductCategoryRepository productCategories;
 
-        public ProductRepo Cotext;
-
-        public ProductManegerController()
+        public ProductManagerController()
         {
-            Cotext = new ProductRepo();
+            context = new ProductRepo();
+            productCategories = new ProductCategoryRepository();
         }
-        // GET: ProductManeger
+        // GET: ProductManager
         public ActionResult Index()
         {
-            List<Product> products = Cotext.Collection().ToList();
+            List<Product> products = context.Collection().ToList();
             return View(products);
         }
 
         public ActionResult Create()
         {
-            Product product = new Product();
-            return View(product);
+            ProductManegerViewsModel viewModel = new ProductManegerViewsModel();
+
+            viewModel.product = new Product();
+            viewModel.ProductCategories = productCategories.Collection();
+            return View(viewModel);
         }
 
         [HttpPost]
@@ -39,31 +45,37 @@ namespace MyShop.WebUI.Controllers
             }
             else
             {
-                Cotext.Insert(product);
-                Cotext.Commit();
+                context.Insert(product);
+                context.Commit();
 
                 return RedirectToAction("Index");
             }
+
         }
 
-        public ActionResult Edit(String Id)
+        public ActionResult Edit(string Id)
         {
-            Product product = Cotext.Find(Id);
-            if(product == null)
+            Product product = context.Find(Id);
+            if (product == null)
             {
                 return HttpNotFound();
             }
             else
             {
-                return View(product);
+                ProductManegerViewsModel viewModel = new ProductManegerViewsModel();
+                viewModel.product = product;
+                viewModel.ProductCategories = productCategories.Collection();
+
+                return View(viewModel);
             }
         }
 
         [HttpPost]
-        public ActionResult Update(Product product, string Id)
+        public ActionResult Edit(Product product, string Id)
         {
-            Product productToEdit = Cotext.Find(Id);
-            if(product == null)
+            Product productToEdit = context.Find(Id);
+
+            if (productToEdit == null)
             {
                 return HttpNotFound();
             }
@@ -73,22 +85,23 @@ namespace MyShop.WebUI.Controllers
                 {
                     return View(product);
                 }
-                else
-                {
-                    productToEdit.Cetaglory = product.Cetaglory;
-                    productToEdit.Desscription = product.Desscription;
-                    productToEdit.Image = product.Image;
-                    productToEdit.Name = product.Name;
-                    Cotext.Commit();
 
-                    return RedirectToAction("Index");
-                }
+                productToEdit.Cetaglory = product.Cetaglory;
+                productToEdit.Desscription = product.Desscription;
+                productToEdit.Image = product.Image;
+                productToEdit.Name = product.Name;
+                productToEdit.Price = product.Price;
+
+                context.Commit();
+
+                return RedirectToAction("Index");
             }
         }
 
         public ActionResult Delete(string Id)
         {
-            Product productToDelete = Cotext.Find(Id);
+            Product productToDelete = context.Find(Id);
+
             if (productToDelete == null)
             {
                 return HttpNotFound();
@@ -103,18 +116,17 @@ namespace MyShop.WebUI.Controllers
         [ActionName("Delete")]
         public ActionResult ConfirmDelete(string Id)
         {
-            Product productToDelete = Cotext.Find(Id);
+            Product productToDelete = context.Find(Id);
+
             if (productToDelete == null)
             {
                 return HttpNotFound();
             }
             else
             {
-                Cotext.Delete(Id);
-                Cotext.Commit();
+                context.Delete(Id);
                 return RedirectToAction("Index");
             }
         }
-
     }
 }
